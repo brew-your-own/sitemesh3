@@ -32,7 +32,7 @@ import java.nio.CharBuffer;
  */
 public class SiteMeshFilter extends ContentBufferingFilter {
 
-    private final ContentProcessor contentProcessor;
+    protected final ContentProcessor contentProcessor;
     private final DecoratorSelector<WebAppContext> decoratorSelector;
 
     /**

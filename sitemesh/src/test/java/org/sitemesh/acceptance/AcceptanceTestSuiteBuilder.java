@@ -81,10 +81,10 @@ public class AcceptanceTestSuiteBuilder {
     }
 
     private static File getExpectedDir(String suiteName) throws FileNotFoundException {
-        return new File(new File(TestUtil.findDir("sitemesh/src/test/java/org/sitemesh/acceptance"), suiteName), "expected");
+        return new File(new File(TestUtil.findDir("src/test/java/org/sitemesh/acceptance"), suiteName), "expected");
     }
 
     public static File getInputDir(String suiteName) throws FileNotFoundException {
-        return new File(new File(TestUtil.findDir("sitemesh/src/test/java/org/sitemesh/acceptance"), suiteName), "input");
+        return new File(new File(TestUtil.findDir("src/test/java/org/sitemesh/acceptance"), suiteName), "input");
     }
 }

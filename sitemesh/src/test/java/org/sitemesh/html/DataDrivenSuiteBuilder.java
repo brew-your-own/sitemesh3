@@ -1,27 +1,16 @@
 package org.sitemesh.html;
 
-import org.sitemesh.TestUtil;
-import org.sitemesh.content.ContentProcessor;
-import org.sitemesh.content.ContentProperty;
-import org.sitemesh.content.Content;
-import org.sitemesh.SiteMeshContextStub;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.sitemesh.SiteMeshContextStub;
+import org.sitemesh.TestUtil;
+import org.sitemesh.content.Content;
+import org.sitemesh.content.ContentProcessor;
+import org.sitemesh.content.ContentProperty;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.ByteArrayInputStream;
+import java.io.*;
 import java.nio.CharBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Builds a data driven JUnit test suite from a set of input files. See testdata/readme.txt.
@@ -36,7 +25,7 @@ public class DataDrivenSuiteBuilder {
      */
     public static void buildSuite(TestSuite suite, ContentProcessor processor, String... inputFileNames)
             throws IOException {
-        File testDataDir = TestUtil.findDir("sitemesh/src/test/java/org/sitemesh/html/testdata");
+        File testDataDir = TestUtil.findDir("src/test/java/org/sitemesh/html/testdata");
 
         for (String inputFileName : inputFileNames) {
             File inputFile = new File(testDataDir, inputFileName);
