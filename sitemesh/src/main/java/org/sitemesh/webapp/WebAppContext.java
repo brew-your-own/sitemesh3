@@ -45,6 +45,7 @@ public class WebAppContext extends BaseSiteMeshContext {
     private final HttpServletRequest request;
     private final HttpServletResponse response;
     private final ServletContext servletContext;
+
     private final ResponseMetaData metaData;
 
     public WebAppContext(String contentType, HttpServletRequest request,
@@ -68,6 +69,10 @@ public class WebAppContext extends BaseSiteMeshContext {
 
     public ServletContext getServletContext() {
         return servletContext;
+    }
+
+    public ResponseMetaData getMetaData() {
+        return metaData;
     }
 
     public String getContentType() {
