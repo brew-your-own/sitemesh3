@@ -1,6 +1,8 @@
 package org.sitemesh.webapp.remote;
 
+import org.eclipse.jetty.client.ContentExchange;
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.HttpExchange;
 import org.sitemesh.content.Content;
 import org.sitemesh.content.ContentProcessor;
 import org.sitemesh.webapp.WebAppContext;
@@ -62,11 +64,35 @@ public class RemoteWebAppContext extends WebAppContext {
         getRequest().setAttribute(CONTEXT_KEY, this);
 
         try {
+            CharBuffer buffer = null;
             // Main dispatch.
-            dispatch(filterableRequest, responseBuffer, decoratorPath);
+            if(decoratorPath.startsWith("/")){
+                dispatch(filterableRequest, responseBuffer, decoratorPath);
+                // Write out the buffered output.
+                buffer = responseBuffer.getBuffer();
+            } else {
+                ContentExchange exchange = new ContentExchange(true);
+                exchange.setURL(decoratorPath);
 
-            // Write out the buffered output.
-            CharBuffer buffer = responseBuffer.getBuffer();
+                client.send(exchange);
+
+                // Waits until the exchange is terminated
+                int exchangeState = 0;
+                try {
+                    exchangeState = exchange.waitForDone();
+                    if (exchangeState == HttpExchange.STATUS_COMPLETED){
+                        String body = exchange.getResponseContent();
+                        buffer = CharBuffer.wrap(body);
+                    } else {
+                        throw new IOException("problem: " + exchangeState);
+                    }
+                } catch (InterruptedException e) {
+                    throw new IOException("interrupted", e);
+                }
+
+
+            }
+
             out.append(buffer);
         } catch (ServletException e) {
             //noinspection ThrowableInstanceNeverThrown

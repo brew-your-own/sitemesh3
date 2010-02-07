@@ -95,6 +95,14 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- optional dependencies -->
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-client</artifactId>
+      <version>7.0.1.v20091125</version>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Dependencies used by tests -->
     <dependency>
       <groupId>junit</groupId>
