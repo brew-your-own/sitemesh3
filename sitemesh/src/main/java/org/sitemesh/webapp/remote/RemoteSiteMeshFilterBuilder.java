@@ -1,14 +1,16 @@
 package org.sitemesh.webapp.remote;
 
+import org.eclipse.jetty.client.HttpClient;
 import org.sitemesh.builder.BaseSiteMeshFilterBuilder;
 
 import javax.servlet.Filter;
 
 /**
  * @author Renaud Bruyeron
- * @version $Id$
  */
 public class RemoteSiteMeshFilterBuilder extends BaseSiteMeshFilterBuilder<RemoteSiteMeshFilterBuilder> {
+
+    private HttpClient client = new HttpClient();
 
     /**
      * Create the SiteMesh Filter.
@@ -17,6 +19,17 @@ public class RemoteSiteMeshFilterBuilder extends BaseSiteMeshFilterBuilder<Remot
     public Filter create() {
         return new RemoteSiteMeshFilter(getSelector(),
                 getContentProcessor(),
-                getDecoratorSelector());
+                getDecoratorSelector(), client);
+    }
+
+    /**
+     * Set timeout parameter for remote decorators.
+     * 
+     * @param timeout
+     * @return
+     */
+    public RemoteSiteMeshFilterBuilder setHttpClientTimeout(long timeout){
+        this.client.setTimeout(timeout);
+        return this;
     }
 }

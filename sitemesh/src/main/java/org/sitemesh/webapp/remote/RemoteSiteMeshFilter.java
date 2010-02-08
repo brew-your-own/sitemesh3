@@ -15,25 +15,23 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author Renaud Bruyeron
- * @version $Id$
  */
 public class RemoteSiteMeshFilter extends SiteMeshFilter {
 
-    protected HttpClient client = null;
+    protected final HttpClient client;
 
-    public RemoteSiteMeshFilter(Selector selector, ContentProcessor contentProcessor, DecoratorSelector<WebAppContext> decoratorSelector) {
+    public RemoteSiteMeshFilter(Selector selector, ContentProcessor contentProcessor, DecoratorSelector<WebAppContext> decoratorSelector, HttpClient client) {
         super(selector, contentProcessor, decoratorSelector);
+        this.client = client;
     }
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         super.init(filterConfig);
-        client = new HttpClient();
-        client.setTimeout(3000);
         try {
             client.start();
         } catch(Exception e){
-            throw new RuntimeException("failed to start httpclient", e);
+            throw new ServletException("failed to start httpclient", e);
         }
     }
 
@@ -45,7 +43,6 @@ public class RemoteSiteMeshFilter extends SiteMeshFilter {
         } catch(Exception e){
             throw new RuntimeException("failed to stop httpclient", e);
         }
-        client = null;
     }
 
     /**

@@ -6,13 +6,9 @@ import org.eclipse.jetty.client.HttpExchange;
 import org.sitemesh.content.Content;
 import org.sitemesh.content.ContentProcessor;
 import org.sitemesh.webapp.WebAppContext;
-import org.sitemesh.webapp.contentfilter.BasicSelector;
-import org.sitemesh.webapp.contentfilter.HttpServletRequestFilterable;
-import org.sitemesh.webapp.contentfilter.HttpServletResponseBuffer;
 import org.sitemesh.webapp.contentfilter.ResponseMetaData;
 
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -20,8 +16,12 @@ import java.io.Writer;
 import java.nio.CharBuffer;
 
 /**
+ * SiteMesh {@link org.sitemesh.SiteMeshContext} implementation that builds on {@link org.sitemesh.webapp.WebAppContext}
+ * to add the ability to fetch decorators from a remote (i.e. HTTP) server.
+ * Uses a Jetty Client instance.
+ *
+ * @todo caching, error handling
  * @author Renaud Bruyeron
- * @version $Id$
  */
 public class RemoteWebAppContext extends WebAppContext {
 
@@ -34,74 +34,35 @@ public class RemoteWebAppContext extends WebAppContext {
 
     /**
      * Dispatches to another path to render a decorator.
+     * <p>The path can be a URL, in which case the dispath is performed by the Jetty Client instance</p>.
+     * <p>If not then the standard {@link org.sitemesh.webapp.WebAppContext#dispatch(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, String)} is invoked</p>
      *
-     * <p>This path may anything that handles a standard request (e.g. Servlet,
-     * JSP, MVC framework, etc).</p>
-     *
-     * <p>The end point can access the {@link org.sitemesh.content.ContentProperty} and {@link org.sitemesh.SiteMeshContext} by using
-     * looking them up as {@link HttpServletRequest} attributes under the keys
-     * {@link #CONTENT_KEY} and
-     * {@link #CONTEXT_KEY} respectively.</p>
+     * @see org.sitemesh.webapp.WebAppContext
      */
     @Override
     protected void decorate(String decoratorPath, Content content, Writer out) throws IOException {
-        HttpServletRequest filterableRequest = new HttpServletRequestFilterable(getRequest());
-        // Wrap response so output gets buffered.
-        HttpServletResponseBuffer responseBuffer = new HttpServletResponseBuffer(getResponse(), getMetaData(), new BasicSelector() {
-            @Override
-            public boolean shouldBufferForContentType(String contentType, String mimeType, String encoding) {
-                return true; // We know we should buffer.
-            }
-        });
-        responseBuffer.setContentType(getResponse().getContentType()); // Trigger buffering.
+        if (decoratorPath.startsWith("/")) {
+            // fallback
+            super.decorate(decoratorPath, content, out);
+        } else {
+            ContentExchange exchange = new ContentExchange(true);
+            exchange.setURL(decoratorPath);
 
-        // It's possible that this is reentrant, so we need to take a copy
-        // of additional request attributes so we can restore them afterwards.
-        Object oldContent = getRequest().getAttribute(CONTENT_KEY);
-        Object oldContext = getRequest().getAttribute(CONTEXT_KEY);
+            client.send(exchange);
 
-        getRequest().setAttribute(CONTENT_KEY, content);
-        getRequest().setAttribute(CONTEXT_KEY, this);
-
-        try {
-            CharBuffer buffer = null;
-            // Main dispatch.
-            if(decoratorPath.startsWith("/")){
-                dispatch(filterableRequest, responseBuffer, decoratorPath);
-                // Write out the buffered output.
-                buffer = responseBuffer.getBuffer();
-            } else {
-                ContentExchange exchange = new ContentExchange(true);
-                exchange.setURL(decoratorPath);
-
-                client.send(exchange);
-
-                // Waits until the exchange is terminated
-                int exchangeState = 0;
-                try {
-                    exchangeState = exchange.waitForDone();
-                    if (exchangeState == HttpExchange.STATUS_COMPLETED){
-                        String body = exchange.getResponseContent();
-                        buffer = CharBuffer.wrap(body);
-                    } else {
-                        throw new IOException("problem: " + exchangeState);
-                    }
-                } catch (InterruptedException e) {
-                    throw new IOException("interrupted", e);
+            // Waits until the exchange is terminated
+            int exchangeState = 0;
+            try {
+                exchangeState = exchange.waitForDone();
+                if (exchangeState == HttpExchange.STATUS_COMPLETED) {
+                    out.append(CharBuffer.wrap(exchange.getResponseContent()));
+                } else {
+                    throw new IOException("problem: " + exchangeState);
                 }
-
-
+            } catch (InterruptedException e) {
+                throw new IOException("interrupted", e);
             }
-
-            out.append(buffer);
-        } catch (ServletException e) {
-            //noinspection ThrowableInstanceNeverThrown
-            throw (IOException) new IOException("Could not dispatch to decorator").initCause(e);
-        } finally {
-            // Restore previous state.
-            getRequest().setAttribute(CONTENT_KEY, oldContent);
-            getRequest().setAttribute(CONTEXT_KEY, oldContext);
         }
     }
-    
+
 }
