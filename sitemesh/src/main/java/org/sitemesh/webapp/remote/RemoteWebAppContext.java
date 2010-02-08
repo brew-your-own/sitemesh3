@@ -20,7 +20,7 @@ import java.nio.CharBuffer;
  * to add the ability to fetch decorators from a remote (i.e. HTTP) server.
  * Uses a Jetty Client instance.
  *
- * @todo caching, error handling
+ * @todo error handling
  * @author Renaud Bruyeron
  */
 public class RemoteWebAppContext extends WebAppContext {
@@ -45,6 +45,7 @@ public class RemoteWebAppContext extends WebAppContext {
             // fallback
             super.decorate(decoratorPath, content, out);
         } else {
+            metaData.beginNewResponse();
             ContentExchange exchange = new ContentExchange(true);
             exchange.setURL(decoratorPath);
 
@@ -56,6 +57,8 @@ public class RemoteWebAppContext extends WebAppContext {
                 exchangeState = exchange.waitForDone();
                 if (exchangeState == HttpExchange.STATUS_COMPLETED) {
                     out.append(CharBuffer.wrap(exchange.getResponseContent()));
+                    // update metaData so that caching works as expected...
+                    metaData.updateLastModified(exchange.getResponseFields().getDateField("Last-Modified"));
                 } else {
                     throw new IOException("problem: " + exchangeState);
                 }

@@ -46,7 +46,7 @@ public class WebAppContext extends BaseSiteMeshContext {
     private final HttpServletResponse response;
     private final ServletContext servletContext;
 
-    private final ResponseMetaData metaData;
+    protected final ResponseMetaData metaData;
 
     public WebAppContext(String contentType, HttpServletRequest request,
                          HttpServletResponse response, ServletContext servletContext,
