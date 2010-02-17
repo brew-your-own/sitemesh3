@@ -63,7 +63,7 @@ public class RemoteWebAppContext extends WebAppContext {
                     throw new IOException("problem: " + exchangeState);
                 }
             } catch (InterruptedException e) {
-                throw new IOException("interrupted", e);
+                throw new IOException(String.format("Fetching of remote decorator %s interrupted", decoratorPath), e);
             }
         }
     }

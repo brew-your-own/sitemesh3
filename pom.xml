@@ -18,6 +18,7 @@
 
   <modules>
     <module>sitemesh</module>
+    <module>sitemesh-remote</module>
     <module>sitemesh-examples-hellowebapp</module>
   </modules>
 
