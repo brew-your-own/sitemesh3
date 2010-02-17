@@ -29,6 +29,12 @@ import java.util.TimeZone;
  */
 public class RemoteTest extends TestCase {
 
+    private final static int PORT = 8089;
+    private final static String BASEURL = String.format("http://localhost:%d", PORT);
+    private final static String STATIC_CONTEXTPATH = "/static";
+    private final static String DECORATOR_PATH = "/my-decorator";
+    private final static String CONTENT_PATH = "/content";
+
     Server server;
     HandlerCollection hc;
 
@@ -36,7 +42,7 @@ public class RemoteTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         Log.setLog(null);
-        server = new Server(8080);
+        server = new Server(PORT);
         hc = new HandlerCollection();
         server.setHandler(hc);
     }
@@ -52,17 +58,17 @@ public class RemoteTest extends TestCase {
     public void testCachingRemoteDecorator() throws Exception {
 
         Context staticContext = new org.mortbay.jetty.webapp.WebAppContext();
-        staticContext.setContextPath("/static");
+        staticContext.setContextPath(STATIC_CONTEXTPATH);
         staticContext.setBaseResource(new FileResource(new URL("file://ignoreTHIS/")));
-        staticContext.addServlet(new ServletHolder(new LastModifiedContentServlet("Decorated: <sitemesh:write property='title'/>", "text/html", getLastModifiedMillis(1990))), "/my-decorator");
+        staticContext.addServlet(new ServletHolder(new LastModifiedContentServlet("Decorated: <sitemesh:write property='title'/>", "text/html", getLastModifiedMillis(1990))), DECORATOR_PATH);
         hc.addHandler(staticContext);
 
         Context context = new org.mortbay.jetty.webapp.WebAppContext();
         context.setBaseResource(new FileResource(new URL("file://ignoreTHIS/")));
-        context.addServlet(new ServletHolder(new LastModifiedContentServlet("<title>Hello world</title>", "text/html", getLastModifiedMillis(1980))), "/content");
+        context.addServlet(new ServletHolder(new LastModifiedContentServlet("<title>Hello world</title>", "text/html", getLastModifiedMillis(1980))), CONTENT_PATH);
 
         context.addFilter(new FilterHolder(new RemoteSiteMeshFilterBuilder()
-                .addDecoratorPath("/*", "http://localhost:8080/static/my-decorator")
+                .addDecoratorPath("/*", BASEURL + STATIC_CONTEXTPATH + DECORATOR_PATH)
                 .create()), "/*", Handler.DEFAULT);
         hc.addHandler(context);
 
@@ -73,7 +79,7 @@ public class RemoteTest extends TestCase {
         client.start();
 
         ContentExchange exchange = new ContentExchange(true);
-        exchange.setURL("http://localhost:8080/content");
+        exchange.setURL(BASEURL + CONTENT_PATH);
         exchange.setRequestHeader("If-Modified-Since", HttpFields.formatDate(getLastModifiedMillis(1991)));
 
         client.send(exchange);
@@ -90,7 +96,7 @@ public class RemoteTest extends TestCase {
         // let's do this again, but ask for a if-modified-since where the content is older but the decorator is newer
         // SM3 should return a 200 with a Last-Modified equal to the decorator's
         exchange = new ContentExchange(true);
-        exchange.setURL("http://localhost:8080/content");
+        exchange.setURL(BASEURL + CONTENT_PATH);
         exchange.setRequestHeader("If-Modified-Since", HttpFields.formatDate(getLastModifiedMillis(1985)));
 
         client.send(exchange);
@@ -112,17 +118,17 @@ public class RemoteTest extends TestCase {
     public void testRemoteDecorator() throws Exception {
 
         Context staticContext = new org.mortbay.jetty.webapp.WebAppContext();
-        staticContext.setContextPath("/static");
+        staticContext.setContextPath(STATIC_CONTEXTPATH);
         staticContext.setBaseResource(new FileResource(new URL("file://ignoreTHIS/")));
-        staticContext.addServlet(new ServletHolder(new LastModifiedContentServlet("Decorated: <sitemesh:write property='title'/>", "text/html")), "/my-decorator");
+        staticContext.addServlet(new ServletHolder(new LastModifiedContentServlet("Decorated: <sitemesh:write property='title'/>", "text/html")), DECORATOR_PATH);
         hc.addHandler(staticContext);
 
         Context context = new org.mortbay.jetty.webapp.WebAppContext();
         context.setBaseResource(new FileResource(new URL("file://ignoreTHIS/")));
-        context.addServlet(new ServletHolder(new LastModifiedContentServlet("<title>Hello world</title>", "text/html")), "/content");
+        context.addServlet(new ServletHolder(new LastModifiedContentServlet("<title>Hello world</title>", "text/html")), CONTENT_PATH);
 
         context.addFilter(new FilterHolder(new RemoteSiteMeshFilterBuilder()
-                .addDecoratorPath("/*", "http://localhost:8080/static/my-decorator")
+                .addDecoratorPath("/*", BASEURL + STATIC_CONTEXTPATH + DECORATOR_PATH)
                 .create()), "/*", Handler.DEFAULT);
         hc.addHandler(context);
 
@@ -133,7 +139,7 @@ public class RemoteTest extends TestCase {
         client.start();
 
         ContentExchange exchange = new ContentExchange(true);
-        exchange.setURL("http://localhost:8080/content");
+        exchange.setURL(BASEURL + CONTENT_PATH);
 
         client.send(exchange);
 
